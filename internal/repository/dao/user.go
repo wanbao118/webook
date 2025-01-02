@@ -57,3 +57,19 @@ func (dao *UserDao) GetByEmail(ctx context.Context, email string) (*User, error)
 
 	return &user, err
 }
+
+func (dao *UserDao) Update(ctx context.Context, user *User) error {
+	err := dao.db.WithContext(ctx).Updates(user).Error
+	return err
+}
+
+func (dao *UserDao) GetById(ctx context.Context, id int64) (*User, error) {
+	var user User
+	err := dao.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, ErrRecordNotFound
+	}
+
+	return &user, err
+}

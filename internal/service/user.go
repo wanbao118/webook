@@ -46,3 +46,15 @@ func (svc *UserService) Signin(ctx context.Context, email, password string) (*do
 	}
 	return user, nil
 }
+
+func (svc *UserService) Update(ctx context.Context, user domain.User) error {
+	return svc.repository.Update(ctx, user)
+}
+
+func (svc *UserService) FindById(ctx context.Context, id int64) (*domain.User, error) {
+	return svc.repository.FindById(ctx, id)
+}
+
+func (svc *UserService) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
+	return svc.repository.FindByEmail(ctx, email)
+}

@@ -1,6 +1,8 @@
 package web
 
 import (
+	"strconv"
+
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -31,6 +33,8 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 func (u *UserHandler) RegisterRoutes(server *gin.Engine) {
 	server.POST("/users/signup", u.Signup)
 	server.POST("/users/signin", u.Login)
+	server.GET("/users/profile/:id", u.Profile)
+	server.POST("/users/edit", u.Edit)
 }
 
 func (u *UserHandler) Signup(ctx *gin.Context) {
@@ -125,4 +129,58 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 		ctx.JSON(500, gin.H{"error": err.Error()})
 	}
 
+}
+
+func (u *UserHandler) Profile(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		ctx.JSON(400, gin.H{"error": "invalid user ID"})
+		return
+	}
+	user, err := u.svc.FindById(ctx, id)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"id":    user.Id,
+		"email": user.Email,
+	})
+}
+
+func (u *UserHandler) Edit(ctx *gin.Context) {
+	type EditRequest struct {
+		Id       int64  `json:"id"`
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	var req EditRequest
+	if err := ctx.BindJSON(&req); err != nil {
+		ctx.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := u.svc.FindById(ctx, req.Id)
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	err = u.svc.Update(ctx, domain.User{
+		Id:       user.Id,
+		Email:    req.Email,
+		Password: req.Password,
+	})
+
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(200, gin.H{
+		"id":    user.Id,
+		"email": user.Email,
+	})
 }
