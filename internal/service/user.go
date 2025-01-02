@@ -48,6 +48,23 @@ func (svc *UserService) Signin(ctx context.Context, email, password string) (*do
 }
 
 func (svc *UserService) Update(ctx context.Context, user domain.User) error {
+	if user.Id == 0 {
+		return errors.New("user id is required")
+	}
+	if user.Email == "" {
+		return errors.New("email is required")
+	}
+	if user.Password == "" {
+		return errors.New("password is required")
+	}
+	if user.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		user.Password = string(hashedPassword)
+	}
+
 	return svc.repository.Update(ctx, user)
 }
 
